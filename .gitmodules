@@ -1,0 +1,3 @@
+[submodule "lib/bovil"]
+	path = lib/bovil
+	url = https://github.com/bardo91/bovil.git
