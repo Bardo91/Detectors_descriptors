@@ -54,7 +54,7 @@ int main(int _argc, char ** _argv) {
 	detectorTimes();
 
 	// Descriptors speed.
-
+	
 	// Detector Repeatability.
 
 	// 
@@ -64,15 +64,44 @@ int main(int _argc, char ** _argv) {
 template<class Detector_> 
 double computeDetectorTime(string _imgPath, Size _imgSize, unsigned _repetitions) {
 	double avgTime = 0.0;
+
 	Mat image = imread(_imgPath, CV_LOAD_IMAGE_GRAYSCALE);
 	resize(image, image, _imgSize);
 	Ptr<Detector_> detector = Detector_::create();
+
 	STime *timer = STime::get();
 	double tstart = 0;
+
 	for (unsigned i = 0; i < _repetitions; i++) {
 		vector<KeyPoint> keypoints;
 		tstart = timer->getTime();
 		detector->detect(image, keypoints);
+		avgTime += timer->getTime() - tstart;
+	}
+
+	return avgTime/_repetitions;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+template<class Detector_> 
+double computeDescriptorTime(string _imgPath, Size _imgSize, unsigned _repetitions) {
+	double avgTime = 0.0;
+
+	Mat image = imread(_imgPath, CV_LOAD_IMAGE_GRAYSCALE);
+	resize(image, image, _imgSize);
+
+	Ptr<Detector_> descriptor = Detector_::create();
+	Ptr<SIFT> detectorSIFT = SIFT::create();
+
+	STime *timer = STime::get();
+	double tstart = 0;
+
+	for (unsigned i = 0; i < _repetitions; i++) {
+		vector<KeyPoint> keypoints;
+		Mat descriptors;
+		detectorSIFT->detect(image, keypoints);
+		tstart = timer->getTime();
+		descriptor->compute(image, keypoints, descriptors);
 		avgTime += timer->getTime() - tstart;
 	}
 
