@@ -133,8 +133,8 @@ void detectorTimes() {
 		}
 
 		unsigned totalImages = folderPaths.size()*imgNames.size();
-		for (double &time : times[i]) {
-			time /= totalImages;
+		for (unsigned j = 0; j < times[i].size(); j++) {
+			times[i][j] /= totalImages;
 		}
 	}
 
@@ -176,8 +176,8 @@ void descriptorTimes() {
 		}
 
 		unsigned totalImages = folderPaths.size()*imgNames.size();
-		for (double &time : times[i]) {
-			time /= totalImages;
+		for (unsigned j = 0; j < times[i].size(); j++) {
+			times[i][j] /= totalImages;
 		}
 	}
 
