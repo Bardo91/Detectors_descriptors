@@ -44,19 +44,13 @@ const vector<string>	imgNames	= {	"img_1.ppm",
 										"img_4.ppm"};
 const vector<Size>		imgSizes	= {Size(300, 200), Size(640, 480), Size(800,600)};
 
-
+//---------------------------------------------------------------------------------------------------------------------
 template<class Detector_> 
 double computeDetectorTime(string _imgPath, Size _imgSize, unsigned _repetitions);
-
 void detectorTimes();
 
+//---------------------------------------------------------------------------------------------------------------------
 int main(int _argc, char ** _argv) {
-	string graffitiPath = "C:/Users/Pablo RS/Downloads/Matching dataset/graffiti/graffiti/";
-	string carPath		= "C:/Users/Pablo RS/Downloads/Matching dataset/cars/cars/";
-	string boatPath		= "C:/Users/Pablo RS/Downloads/Matching dataset/boat_d/boat/";
-	string bikesPath	= "C:/Users/Pablo RS/Downloads/Matching dataset/bikes/bikes/";
-	
-	
 	detectorTimes();
 
 	// Descriptors speed.
@@ -66,6 +60,7 @@ int main(int _argc, char ** _argv) {
 	// 
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 template<class Detector_> 
 double computeDetectorTime(string _imgPath, Size _imgSize, unsigned _repetitions) {
 	double avgTime = 0.0;
@@ -84,6 +79,7 @@ double computeDetectorTime(string _imgPath, Size _imgSize, unsigned _repetitions
 	return avgTime/_repetitions;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 void detectorTimes() {
 	// Open stream file
 	ofstream detectorTimes("detector_times.txt");
@@ -126,3 +122,5 @@ void detectorTimes() {
 	detectorTimes.flush();
 	detectorTimes.close();
 }
+
+//---------------------------------------------------------------------------------------------------------------------
