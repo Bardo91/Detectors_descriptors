@@ -47,11 +47,12 @@ const vector<Size>		imgSizes	= {Size(300, 200), Size(640, 480), Size(800,600)};
 //---------------------------------------------------------------------------------------------------------------------
 template<class Detector_> 
 double computeDetectorTime(string _imgPath, Size _imgSize, unsigned _repetitions);
+template<typename Operator_>
 void detectorTimes();
 
 //---------------------------------------------------------------------------------------------------------------------
 int main(int _argc, char ** _argv) {
-	detectorTimes();
+	detectorTimes<computeDetectorTime>();
 
 	// Descriptors speed.
 	
@@ -109,6 +110,7 @@ double computeDescriptorTime(string _imgPath, Size _imgSize, unsigned _repetitio
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+template<template <typename Descriptor_> typename Operator_>
 void detectorTimes() {
 	// Open stream file
 	ofstream detectorTimes("detector_times.txt");
@@ -124,13 +126,13 @@ void detectorTimes() {
 			std::cout << "----> Folder: " << folder << std::endl;
 			for (string imgName : imgNames) {
 				std::cout << "------> Image: " << imgName << std::endl;
-				times[i][0] += computeDetectorTime<xfeatures2d::SIFT>	(folder + imgName, imgSizes[i], repetitions);
-				times[i][1] += computeDetectorTime<xfeatures2d::SURF>	(folder + imgName, imgSizes[i], repetitions);
-				times[i][2] += computeDetectorTime<FAST_wrapper>		(folder + imgName, imgSizes[i], repetitions);
-				times[i][3] += computeDetectorTime<ORB>				(folder + imgName, imgSizes[i], repetitions);
-				times[i][4] += computeDetectorTime<BRISK>				(folder + imgName, imgSizes[i], repetitions);
-				times[i][5] += computeDetectorTime<KAZE>				(folder + imgName, imgSizes[i], repetitions);
-				times[i][6] += computeDetectorTime<AKAZE>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][0] += Operator_<xfeatures2d::SIFT>	(folder + imgName, imgSizes[i], repetitions);
+				times[i][1] += Operator_<xfeatures2d::SURF>	(folder + imgName, imgSizes[i], repetitions);
+				times[i][2] += Operator_<FAST_wrapper>		(folder + imgName, imgSizes[i], repetitions);
+				times[i][3] += Operator_<ORB>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][4] += Operator_<BRISK>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][5] += Operator_<KAZE>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][6] += Operator_<AKAZE>				(folder + imgName, imgSizes[i], repetitions);
 				//times[0] += computeDetectorTime<xfeatures2d::LATCH>(folder+imgName, repetitions); 777 Not implemented yet in opencv 3.0
 			}
 		}
