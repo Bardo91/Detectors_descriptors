@@ -1,7 +1,7 @@
 times = load('descriptor_times.txt');
 
 detector_labels = {'SIFT', 'SURF', 'ORB', 'BRISK', 'KAZE', 'AKAZE'};
-size_labels = {'200x300', '480x640', '800x600'};
+size_labels = {'300x200', '640x480', '800x600'};
 
 figure();
 hold on;
@@ -14,3 +14,5 @@ for i=1:m
    plot(times(i,:), '*-');
    legend(detector_labels);
 end
+
+title('Descriptors Times');
