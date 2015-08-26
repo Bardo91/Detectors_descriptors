@@ -47,18 +47,15 @@ const vector<Size>		imgSizes	= {Size(300, 200), Size(640, 480), Size(800,600)};
 //---------------------------------------------------------------------------------------------------------------------
 template<class Detector_> 
 double computeDetectorTime(string _imgPath, Size _imgSize, unsigned _repetitions);
-template<typename Operator_>
+template<class Descriptor> 
+double computeDescriptorTime(string _imgPath, Size _imgSize, unsigned _repetitions);
 void detectorTimes();
+void descriptorTimes();
 
 //---------------------------------------------------------------------------------------------------------------------
 int main(int _argc, char ** _argv) {
-	detectorTimes<computeDetectorTime>();
-
-	// Descriptors speed.
-	
-	// Detector Repeatability.
-
-	// 
+	detectorTimes();
+	descriptorTimes();	// Using SIFT as detector
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -92,7 +89,6 @@ double computeDescriptorTime(string _imgPath, Size _imgSize, unsigned _repetitio
 	resize(image, image, _imgSize);
 
 	Ptr<Detector_> descriptor = Detector_::create();
-	Ptr<SIFT> detectorSIFT = SIFT::create();
 
 	STime *timer = STime::get();
 	double tstart = 0;
@@ -100,7 +96,7 @@ double computeDescriptorTime(string _imgPath, Size _imgSize, unsigned _repetitio
 	for (unsigned i = 0; i < _repetitions; i++) {
 		vector<KeyPoint> keypoints;
 		Mat descriptors;
-		detectorSIFT->detect(image, keypoints);
+		descriptor->detect(image, keypoints);
 		tstart = timer->getTime();
 		descriptor->compute(image, keypoints, descriptors);
 		avgTime += timer->getTime() - tstart;
@@ -110,11 +106,10 @@ double computeDescriptorTime(string _imgPath, Size _imgSize, unsigned _repetitio
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-template<template <typename Descriptor_> typename Operator_>
 void detectorTimes() {
 	// Open stream file
 	ofstream detectorTimes("detector_times.txt");
-	unsigned repetitions = 10;
+	unsigned repetitions = 20;
 	vector<vector<double>> times;
 	times.resize(imgSizes.size());
 
@@ -126,13 +121,13 @@ void detectorTimes() {
 			std::cout << "----> Folder: " << folder << std::endl;
 			for (string imgName : imgNames) {
 				std::cout << "------> Image: " << imgName << std::endl;
-				times[i][0] += Operator_<xfeatures2d::SIFT>	(folder + imgName, imgSizes[i], repetitions);
-				times[i][1] += Operator_<xfeatures2d::SURF>	(folder + imgName, imgSizes[i], repetitions);
-				times[i][2] += Operator_<FAST_wrapper>		(folder + imgName, imgSizes[i], repetitions);
-				times[i][3] += Operator_<ORB>				(folder + imgName, imgSizes[i], repetitions);
-				times[i][4] += Operator_<BRISK>				(folder + imgName, imgSizes[i], repetitions);
-				times[i][5] += Operator_<KAZE>				(folder + imgName, imgSizes[i], repetitions);
-				times[i][6] += Operator_<AKAZE>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][0] += computeDetectorTime<xfeatures2d::SIFT>	(folder + imgName, imgSizes[i], repetitions);
+				times[i][1] += computeDetectorTime<xfeatures2d::SURF>	(folder + imgName, imgSizes[i], repetitions);
+				times[i][2] += computeDetectorTime<FAST_wrapper>		(folder + imgName, imgSizes[i], repetitions);
+				times[i][3] += computeDetectorTime<ORB>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][4] += computeDetectorTime<BRISK>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][5] += computeDetectorTime<KAZE>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][6] += computeDetectorTime<AKAZE>				(folder + imgName, imgSizes[i], repetitions);
 				//times[0] += computeDetectorTime<xfeatures2d::LATCH>(folder+imgName, repetitions); 777 Not implemented yet in opencv 3.0
 			}
 		}
@@ -155,3 +150,44 @@ void detectorTimes() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+void descriptorTimes() {
+	// Open stream file
+	ofstream detectorTimes("descriptor_times.txt");
+	unsigned repetitions = 20;
+	vector<vector<double>> times;
+	times.resize(imgSizes.size());
+
+	std::cout << "Computing descriptor times" << std::endl;
+	for (int i = 0; i < imgSizes.size(); i++) {
+		times[i].resize(6);
+		std::cout << "--> Size: " << imgSizes[i].width << "x" << imgSizes[i].height << std::endl; 
+		for (string folder : folderPaths) {
+			std::cout << "----> Folder: " << folder << std::endl;
+			for (string imgName : imgNames) {
+				std::cout << "------> Image: " << imgName << std::endl;
+				times[i][0] += computeDescriptorTime<xfeatures2d::SIFT>	(folder + imgName, imgSizes[i], repetitions);
+				times[i][1] += computeDescriptorTime<xfeatures2d::SURF>	(folder + imgName, imgSizes[i], repetitions);
+				times[i][2] += computeDescriptorTime<ORB>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][3] += computeDescriptorTime<BRISK>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][4] += computeDescriptorTime<KAZE>				(folder + imgName, imgSizes[i], repetitions);
+				times[i][5] += computeDescriptorTime<AKAZE>				(folder + imgName, imgSizes[i], repetitions);
+				//times[0] += computeDetectorTime<xfeatures2d::LATCH>(folder+imgName, repetitions); 777 Not implemented yet in opencv 3.0
+			}
+		}
+
+		unsigned totalImages = folderPaths.size()*imgNames.size();
+		for (double &time : times[i]) {
+			time /= totalImages;
+		}
+	}
+
+	for (unsigned j = 0; j < times[0].size(); j++) {
+		for (unsigned i = 0; i < times.size(); i++) {
+			detectorTimes << times[i][j] << "\t";
+		}
+		detectorTimes << std::endl;
+	}
+
+	detectorTimes.flush();
+	detectorTimes.close();
+}
