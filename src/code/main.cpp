@@ -51,11 +51,13 @@ template<class Descriptor>
 double computeDescriptorTime(string _imgPath, Size _imgSize, unsigned _repetitions);
 void detectorTimes();
 void descriptorTimes();
+void computeRepeatability();
 
 //---------------------------------------------------------------------------------------------------------------------
 int main(int _argc, char ** _argv) {
 	detectorTimes();
-	descriptorTimes();	// Using SIFT as detector
+	descriptorTimes();	
+	computeRepeatability();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -103,6 +105,52 @@ double computeDescriptorTime(string _imgPath, Size _imgSize, unsigned _repetitio
 	}
 
 	return avgTime/_repetitions;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+template<class Detector_> 
+double computeDetectorRepeatability(string _imgPath, Size _imgSize, unsigned _repetitions) {
+	double avgMatchPer = 0.0;
+
+	Mat image = imread(_imgPath, CV_LOAD_IMAGE_GRAYSCALE);
+	resize(image, image, _imgSize);
+
+	Ptr<Detector_> descriptor = Detector_::create();
+
+	for (unsigned i = 0; i < _repetitions; i++) {
+		vector<KeyPoint> keypoints1;
+		Mat descriptors1;
+		descriptor->detect(image, keypoints1);
+		descriptor->compute(image, keypoints1, descriptors1);
+
+		vector<KeyPoint> keypoints2;
+		Mat descriptors2;
+		descriptor->detect(image, keypoints2);
+		descriptor->compute(image, keypoints2, descriptors2);
+
+
+		unsigned matches = 0;
+		vector<bool> matchCheck(keypoints2.size());
+		for (KeyPoint kp1 : keypoints1) {
+			for (unsigned j = 0; j < keypoints2.size(); j++){
+				if(matchCheck[j])
+					continue;
+
+				if (sqrt(pow(kp1.pt.x - keypoints2[j].pt.x, 2) + pow(kp1.pt.y - keypoints2[j].pt.y, 2)) < 5) {
+					if (abs(kp1.size - keypoints2[j].size) < 2) {
+						if (abs(kp1.angle - keypoints2[j].angle) < 1) {
+							matches++;
+							matchCheck[j] = true;
+						}
+					}
+				}
+			}
+		}
+
+		avgMatchPer += matches / double(keypoints1.size() > keypoints2.size() ? keypoints1.size() : keypoints2.size());
+	}
+
+	return avgMatchPer/_repetitions;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -190,4 +238,47 @@ void descriptorTimes() {
 
 	detectorTimes.flush();
 	detectorTimes.close();
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void computeRepeatability() {
+	// Open stream file
+	ofstream repetabilityFile("repeatability.txt");
+	unsigned repetitions = 10;
+	vector<vector<double>> matchPer;
+	matchPer.resize(imgSizes.size());
+
+	std::cout << "Computing descriptor Repeatability" << std::endl;
+	for (int i = 0; i < imgSizes.size(); i++) {
+		matchPer[i].resize(6);
+		std::cout << "--> Size: " << imgSizes[i].width << "x" << imgSizes[i].height << std::endl; 
+		for (string folder : folderPaths) {
+			std::cout << "----> Folder: " << folder << std::endl;
+			for (string imgName : imgNames) {
+				std::cout << "------> Image: " << imgName << std::endl;
+				matchPer[i][0] += computeDetectorRepeatability<xfeatures2d::SIFT>	(folder + imgName, imgSizes[i], repetitions);
+				matchPer[i][1] += computeDetectorRepeatability<xfeatures2d::SURF>	(folder + imgName, imgSizes[i], repetitions);
+				matchPer[i][2] += computeDetectorRepeatability<ORB>				(folder + imgName, imgSizes[i], repetitions);
+				matchPer[i][3] += computeDetectorRepeatability<BRISK>				(folder + imgName, imgSizes[i], repetitions);
+				matchPer[i][4] += computeDetectorRepeatability<KAZE>				(folder + imgName, imgSizes[i], repetitions);
+				matchPer[i][5] += computeDetectorRepeatability<AKAZE>				(folder + imgName, imgSizes[i], repetitions);
+				//times[0] += computeDetectorTime<xfeatures2d::LATCH>(folder+imgName, repetitions); 777 Not implemented yet in opencv 3.0
+			}
+		}
+
+		unsigned totalImages = folderPaths.size()*imgNames.size();
+		for (unsigned j = 0; j < matchPer[i].size(); j++) {
+			matchPer[i][j] /= totalImages;
+		}
+	}
+
+	for (unsigned j = 0; j < matchPer[0].size(); j++) {
+		for (unsigned i = 0; i < matchPer.size(); i++) {
+			repetabilityFile << matchPer[i][j] << "\t";
+		}
+		repetabilityFile << std::endl;
+	}
+
+	repetabilityFile.flush();
+	repetabilityFile.close();
 }
